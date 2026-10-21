@@ -203,7 +203,7 @@ function startLevel(i){
   });
   queue.sort((a,b)=>a.t-b.t);
   totalSpawn=queue.length; spawnedN=0;
-  homeEl.hidden=true; gameEl.hidden=false;
+  $('menu').hidden=true; homeEl.hidden=true; gameEl.hidden=false;
   ovPause.hidden=ovWin.hidden=ovLose.hidden=ovLevel.hidden=true;
   applyWorldBg();
   resize();
@@ -661,6 +661,28 @@ for (const id of ['btnMenu','btnMenu1','btnMenu2','btnMenu3']) $(id).addEventLis
 for (const id of ['btnRestart1','btnRestart2','btnRestart3']) $(id).addEventListener('click', ()=>startLevel(levelIndex));
 $('btnNext').addEventListener('click', ()=>{ toMenu(); openLevel(levelIndex+1); });
 
+/* ---------- Menu principal (écran titre) ---------- */
+function showMenu(){
+  state='home';
+  gameEl.hidden=true; homeEl.hidden=true;
+  const set=(id,key)=>{ const el=$(id); if (IMG[key]){ el.src=IMG[key].src; el.hidden=false; } };
+  set('mcPlant','plant_cracheur'); set('mcZombi','z_pomme'); set('menuLogo','logo');
+  const tot=Object.values(save.stars).reduce((a,b)=>a+b,0);
+  $('menuStars').innerHTML = tot ? `<span class="on">★</span> ${tot} / ${LEVELS.length*3} étoiles` : 'Défends le Verger Enchanté !';
+  $('btnMuteMenu').textContent = save.muted ? '🔇 Son coupé' : '🔊 Son';
+  $('menu').hidden=false;
+}
+$('btnStart').addEventListener('click', ()=>{
+  $('menu').hidden=true;
+  homeEl.hidden=false;
+  renderHome();
+});
+$('btnMuteMenu').addEventListener('click', ()=>{
+  save.muted=!save.muted; Storage.save(save);
+  $('btnMuteMenu').textContent = save.muted ? '🔇 Son coupé' : '🔊 Son';
+  if (!save.muted) sfx.dew();
+});
+
 /* ---------- Accueil : liste des niveaux ---------- */
 function starsHtml(n){ return [1,2,3].map(k=>`<span class="${k<=n?'on':'off'}">★</span>`).join(''); }
 function renderHome(){
@@ -720,7 +742,7 @@ function runIntro(done){
 }
 
 /* ---------- Démarrage ---------- */
-function boot(){ renderHome(); }
+function boot(){ showMenu(); }
 loadImages(()=>{
   if (window.claude?.hot?.data !== undefined && window.claude?.hot?.data !== null){
     $('intro').hidden=true; boot();   // rechargement à chaud : pas d'intro
