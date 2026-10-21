@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Fruit Pop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+<div id="app">
+
+  <div id="home">
+    <div id="homeHead">
+      <h1>Fruit Pop</h1>
+      <div id="coinsHome">🪙 <span id="coinsNum">0</span></div>
+    </div>
+    <p class="tag" id="heroTag">Libère le Verger Enchanté du Baron Moisi&nbsp;!</p>
+    <div id="mapScroll">
+      <div id="mapInner">
+        <canvas id="mapCv"></canvas>
+        <div id="heroWrap" class="idle"><canvas id="heroCv"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="game" hidden>
+    <div class="hud">
+      <button class="icon" id="btnMenu" title="Retour à la carte">🏠</button>
+      <div class="stat"><small>Niv.</small><span id="lvlNum">1</span></div>
+      <div class="stat"><small>Score</small><span id="scoreNum">0</span></div>
+      <div class="spacer"></div>
+      <button class="icon" id="btnMute" title="Son">🔊</button>
+      <button class="icon" id="btnPause" title="Pause">⏸️</button>
+    </div>
+
+    <div id="stage">
+      <canvas id="cv"></canvas>
+      <div id="banner"></div>
+      <div id="chips"></div>
+
+      <div class="overlay" id="ovPause" hidden>
+        <div class="card">
+          <div class="big-emoji">🌸</div>
+          <h2>Petite pause</h2>
+          <div class="btns">
+            <button class="primary" id="btnResume">Reprendre</button>
+            <button id="btnRestart1">Recommencer</button>
+            <button id="btnMenu1">Carte</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="ovWin" hidden>
+        <div class="card">
+          <div class="stars" id="winStars"></div>
+          <h2 id="winTitle">Niveau terminé&nbsp;!</h2>
+          <div class="score-line">Score : <b id="winScore">0</b><br><span id="winBest"></span><br><span id="winCoins"></span></div>
+          <div class="btns">
+            <button class="primary" id="btnNext">Suite ▶</button>
+            <button id="btnRestart2">Rejouer</button>
+            <button id="btnMenu2">Carte</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="ovLose" hidden>
+        <div class="card">
+          <div class="big-emoji">💔</div>
+          <h2>Oh non, écrabouillé&nbsp;!</h2>
+          <div class="score-line">Les fruits ont franchi la ligne.<br>Score : <b id="loseScore">0</b></div>
+          <div class="btns">
+            <button class="primary" id="btnRestart3">Réessayer</button>
+            <button id="btnMenu3">Carte</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="ovChoose" hidden>
+        <div class="card">
+          <h2>Jauge pleine&nbsp;!</h2>
+          <p style="margin:0;font-size:13px;color:var(--fg-dim);">Choisis ton tir spécial :</p>
+          <div class="specrow" id="chooseRow"></div>
+          <button id="btnChooseCancel">Plus tard</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hud">
+      <button id="btnSwap" title="Échanger avec le fruit suivant"><canvas id="nextCv" width="30" height="30" style="vertical-align:-9px;"></canvas> ↻</button>
+      <div id="gaugeWrap" role="button" title="Tir spécial"><div id="gaugeFill"></div><div id="gaugeTxt">Jus 0%</div></div>
+      <div class="stat">🪙<span id="coinsGame">0</span></div>
+      <div class="stat" id="dropStat"><small id="dropLabel">⬇</small><span id="dropNum">10</span></div>
+    </div>
+  </div>
+
+  <div class="overlay appwide" id="ovLevel" hidden>
+    <div class="card">
+      <h2 id="plName">Niveau</h2>
+      <p id="plStory" style="margin:0;font-size:14px;color:var(--fg-dim);"></p>
+      <div class="stars" id="plStars"></div>
+      <div class="score-line" id="plBest"></div>
+      <p style="margin:0;font-size:13px;font-weight:800;">Booster de départ <span style="color:var(--fg-dim);">(optionnel)</span> — 🪙 <span id="plCoins">0</span></p>
+      <div class="specrow" id="plBoosters"></div>
+      <div class="btns">
+        <button class="primary" id="btnPlay">Jouer !</button>
+        <button id="btnPlClose">Retour</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay appwide" id="ovEvolve" hidden>
+    <div class="card">
+      <h2>Pépin a grandi&nbsp;!</h2>
+      <div class="evorow"><canvas id="evoOld"></canvas><span class="evoarrow">➜</span><canvas id="evoNew"></canvas></div>
+      <div class="evoname" id="evoName"></div>
+      <p id="evoDesc" style="margin:0;font-size:14px;color:var(--fg-dim);"></p>
+      <button class="primary" id="btnEvo">Trop mignon&nbsp;!</button>
+    </div>
+  </div>
+
+  <div class="overlay appwide" id="ovDialog" hidden>
+    <div class="dcard" id="dcard">
+      <canvas id="dFace" width="76" height="76"></canvas>
+      <div class="dbody">
+        <div class="dname" id="dName"></div>
+        <div class="dtext" id="dText"></div>
+        <div class="dnext">toucher pour continuer ▸</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Intro studio : visible dès le chargement, retirée par runIntro() -->
+  <div id="intro">
+    <div id="introBox">
+      <img id="introLogo" alt="" hidden>
+      <div id="introEmoji" hidden>🧠</div>
+      <div id="introName">Brainz Studio</div>
+      <div id="introSub">présente</div>
+    </div>
+  </div>
+
+</div>
+<script src="src/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Fruit Kawaii vs Fruit Zombifié</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+<div id="app">
+
+  <div id="home">
+    <div id="homeHead">
+      <h1>Fruit Kawaii <span class="vs">vs</span> Fruit Zombifié</h1>
+    </div>
+    <p class="tag" id="heroTag">Le Baron Zombifié attaque le Verger : plante tes fruits et défends chaque rangée&nbsp;!</p>
+    <div id="lvlScroll"><div id="lvlList"></div></div>
+  </div>
+
+  <div id="game" hidden>
+    <div class="hud">
+      <button class="icon" id="btnMenu" title="Retour aux niveaux">🏠</button>
+      <div class="stat" id="dewStat">💧<span id="dewNum">0</span></div>
+      <div id="waveWrap" title="Progression des vagues"><div id="waveFill"></div><div id="waveTxt"></div></div>
+      <button class="icon" id="btnMute" title="Son">🔊</button>
+      <button class="icon" id="btnPause" title="Pause">⏸️</button>
+    </div>
+
+    <div id="stage">
+      <canvas id="cv"></canvas>
+      <div id="banner"></div>
+
+      <div class="overlay" id="ovPause" hidden>
+        <div class="card">
+          <div class="big-emoji">🌸</div>
+          <h2>Petite pause</h2>
+          <div class="btns">
+            <button class="primary" id="btnResume">Reprendre</button>
+            <button id="btnRestart1">Recommencer</button>
+            <button id="btnMenu1">Niveaux</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="ovWin" hidden>
+        <div class="card">
+          <div class="stars" id="winStars"></div>
+          <h2 id="winTitle">Verger défendu&nbsp;!</h2>
+          <div class="score-line">Score : <b id="winScore">0</b><br><span id="winBest"></span></div>
+          <div class="btns">
+            <button class="primary" id="btnNext">Suite ▶</button>
+            <button id="btnRestart2">Rejouer</button>
+            <button id="btnMenu2">Niveaux</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="ovLose" hidden>
+        <div class="card">
+          <div class="big-emoji">🧟</div>
+          <h2>Les zombifruits sont passés…</h2>
+          <div class="score-line">Score : <b id="loseScore">0</b></div>
+          <div class="btns">
+            <button class="primary" id="btnRestart3">Réessayer</button>
+            <button id="btnMenu3">Niveaux</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hud" id="cardBar"></div>
+  </div>
+
+  <div class="overlay appwide" id="ovLevel" hidden>
+    <div class="card">
+      <h2 id="plName">Niveau</h2>
+      <p id="plStory" style="margin:0;font-size:14px;color:var(--fg-dim);"></p>
+      <div class="stars" id="plStars"></div>
+      <div class="score-line" id="plBest"></div>
+      <div class="btns">
+        <button class="primary" id="btnPlay">Défendre !</button>
+        <button id="btnPlClose">Retour</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Intro studio : visible dès le chargement, retirée par runIntro() -->
+  <div id="intro">
+    <div id="introBox">
+      <img id="introLogo" alt="" hidden>
+      <div id="introEmoji" hidden>🧠</div>
+      <div id="introName">Brainz Studio</div>
+      <div id="introSub">présente</div>
+    </div>
+  </div>
+
+</div>
+<script src="src/game.js"></script>
+</body>
+</html>
