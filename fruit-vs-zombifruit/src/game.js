@@ -37,17 +37,19 @@ const ZOMBIES = {
    script : [t, n, ...types] = à t secondes, n zombifruits tirés au
    hasard parmi types (étalés de 1.6 s en 1.6 s, colonnes aléatoires). */
 const LEVELS = [
+ {name:'Leçon de jardinage', story:'Petite démo guidée : apprends à défendre le verger, pas à pas, sans danger.', tuto:true,
+  cards:['fraisoleil','cracheur'], dew:50, script:[]},
  {name:'Premiers pépins', story:'Les pommes zombifiées arrivent ! Plante des Fraisoleils pour la rosée et des Cracheurs pour tirer.',
   cards:['cracheur','fraisoleil'], dew:150,
   script:[[10,1,'pomme'],[26,1,'pomme'],[42,2,'pomme'],[58,2,'pomme'],[74,3,'pomme']]},
  {name:'La haie tient bon', story:'Les Citrons Pressés courent vite. Le Coco-Mur est là pour encaisser.',
-  cards:['cracheur','fraisoleil','coco'], dew:125,
+  cards:['cracheur','fraisoleil','coco'], dew:125, unlock:'coco',
   script:[[10,1,'pomme'],[24,1,'citron'],[38,2,'pomme'],[52,2,'pomme','citron'],[66,3,'pomme','citron'],[82,4,'pomme','pomme','citron']]},
  {name:'Casque de gland', story:'Les Oranges Casquées encaissent les pépins. Une Bombe Cerise règle ça.',
-  cards:['cracheur','fraisoleil','coco','bombe'], dew:125,
+  cards:['cracheur','fraisoleil','coco','bombe'], dew:125, unlock:'bombe',
   script:[[10,1,'pomme'],[24,1,'orange'],[38,2,'pomme','citron'],[52,2,'orange','pomme'],[68,3,'pomme','citron'],[84,4,'orange','pomme','citron']]},
  {name:'Givre et pépins', story:'La Myrtille Givrée ralentit tout ce qu’elle touche. Fraîcheur garantie !',
-  cards:['cracheur','fraisoleil','coco','givree','bombe'], dew:125,
+  cards:['cracheur','fraisoleil','coco','givree','bombe'], dew:125, unlock:'givree',
   script:[[10,1,'pomme'],[22,2,'citron'],[36,2,'orange'],[50,3,'pomme','citron'],[64,3,'orange','pomme'],[80,4,'pomme','citron','orange'],[96,4,'orange','citron','pomme']]},
  {name:'La pastèque qui roule', story:'Une Pastèque Blindée écrase tout sur son passage. Vise-la en priorité !',
   cards:['cracheur','fraisoleil','coco','givree','bombe'], dew:100,
@@ -63,13 +65,39 @@ const LEVELS = [
   script:[[8,2,'pomme','citron'],[22,3,'orange','raisin'],[38,1,'baron'],[44,3,'pomme','citron'],[60,4,'raisin','orange','pasteque'],[78,5,'pomme','citron','orange','raisin']]},
 ];
 
+/* Mise en avant des nouveaux fruits (« glow up ») au premier niveau qui les débloque */
+const UNLOCKS = {
+  coco:  {desc:'Un mur végétal ultra résistant qui bloque les zombifruits.',
+          how:'Place-le AU-DESSUS de tes tireurs (plus haut dans la colonne) : il encaisse les morsures pendant que les Cracheurs arrosent de pépins, bien à l’abri derrière lui.'},
+  bombe: {desc:'Elle grésille une seconde… puis balaie tous les zombifruits autour d’elle.',
+          how:'Pose-la au milieu d’un groupe compact ou sous une Orange Casquée trop coriace : BOUM, zone nettoyée. Usage unique : elle disparaît après l’explosion.'},
+  givree:{desc:'Ses pépins givrés ralentissent fortement les zombifruits touchés.',
+          how:'Vise les colonnes des Citrons Pressés trop rapides ou des gros costauds : gelés, ils restent deux fois plus longtemps sous le feu de tes Cracheurs.'},
+};
+const CINE_LINES = { baron:'MWAHAHA ! Votre verger sera MA compote ! Mes zombifruits, ATTAQUEZ !' };
+
 /* ---------- Sauvegarde (localStorage ici ; ytgame.game.saveData sur Playables) ---------- */
-const KEY = 'fvz-save-v1';
+const KEY = 'fvz-save-v2';
 const Storage = {
-  load(){ try{ return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; }catch(e){ return {}; } },
+  load(){
+    try{
+      let d = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (!d){
+        // migration v1 : le niveau démo a décalé tous les niveaux de +1
+        const old = JSON.parse(localStorage.getItem('fvz-save-v1') || 'null');
+        if (old){
+          const shift = o=>{ const r={}; for (const k in o||{}) r[+k+1]=o[k]; return r; };
+          d = {unlocked:(old.unlocked||1)+1, best:shift(old.best), stars:shift(old.stars), muted:!!old.muted};
+          localStorage.setItem(KEY, JSON.stringify(d));
+          localStorage.removeItem('fvz-save-v1');
+        }
+      }
+      return d || {};
+    }catch(e){ return {}; }
+  },
   save(d){ try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){} }
 };
-let save = Object.assign({unlocked:1, best:{}, stars:{}, muted:false}, Storage.load());
+let save = Object.assign({unlocked:1, best:{}, stars:{}, muted:false, seenU:{}}, Storage.load());
 
 /* ---------- Audio (synthèse WebAudio) ---------- */
 let actx = null;
@@ -98,7 +126,17 @@ const sfx = {
   bad(){ tone(220,.14,'sawtooth',.07); tone(180,.18,'sawtooth',.06,.07); },
   win(){ [523,659,784,1047].forEach((f,i)=>tone(f,.22,'triangle',.11,i*0.12)); },
   lose(){ [330,262,196,147].forEach((f,i)=>tone(f,.25,'sawtooth',.07,i*0.13)); },
+  groan(){ tone(72,.5,'sawtooth',.12); tone(56,.7,'sawtooth',.1,.2); tone(90,.45,'sawtooth',.08,.5); },
 };
+/* Voix de synthèse (API locale du navigateur : aucun fichier, aucun réseau) */
+function voice(text, pitch){
+  if (save.muted) return;
+  try{
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang='fr-FR'; u.rate=0.95; u.pitch=pitch===undefined?1:pitch;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }catch(e){}
+}
 
 /* ======================================================
    Assets image (embarqués dans le ZIP — aucun réseau).
@@ -155,6 +193,33 @@ let grid=[], zombies=[], bullets=[], drops=[], sprays=[], splats=[], particles=[
 let arro=[], queue=[], totalSpawn=0, spawnedN=0, waveN=0, waveI=0;
 let selected=null, pelleMode=false, cdLeft={};
 let rafId=0, lastT=0, skyT=7, shake=0, cardSync=0;
+let tuto=null, finalShown=false, cineTimer=0, unlockThen=null;
+
+/* ---------- Tutoriel : scénario du niveau démo ---------- */
+const TUTO = [
+ {msg:'Bienvenue dans le verger ! 🍒 Les zombifruits arrivent par le HAUT et descendent vers tes arrosoirs. (touche cette bulle pour continuer)', tap:true},
+ {msg:'Commence par l’économie : touche la carte Fraisoleil 🍓 en bas de l’écran.', card:'fraisoleil'},
+ {msg:'Maintenant, plante-le dans la case qui clignote !', place:['fraisoleil',2,5]},
+ {msg:'Bravo ! Le Fraisoleil fabrique des gouttes de rosée 💧. Touche une goutte pour la ramasser.', collect:true},
+ {msg:'Continue à ramasser la rosée jusqu’à 100 💧 : il en faut pour ton tireur.', dew:100},
+ {msg:'Touche la carte Cracheur 🍒 : c’est lui qui tire des pépins.', card:'cracheur'},
+ {msg:'Place-le AU-DESSUS du Fraisoleil, dans la case qui clignote : il protège toute sa colonne.', place:['cracheur',2,3]},
+ {msg:'Un zombifruit attaque ta colonne ! Regarde ton Cracheur l’arroser de pépins… 🧟', spawn:['pomme',2], waitClear:true},
+ {msg:'Dernier secret : si un zombifruit te dépasse, l’arrosoir de la colonne le stoppe — une seule fois ! Regarde à droite.', spawnLow:['citron',4], waitClear:true},
+ {msg:'Parfait, tu sais tout ! Défends le Verger Enchanté ! 🍒⭐ (touche pour terminer)', tap:true, end:true},
+];
+function advanceTuto(){
+  tuto.i++;
+  const st=TUTO[tuto.i];
+  if (!st) return;
+  if (st.spawn) spawnZombie({type:st.spawn[0], lane:st.spawn[1]});
+  if (st.spawnLow){
+    spawnZombie({type:st.spawnLow[0], lane:st.spawnLow[1]});
+    zombies[zombies.length-1].y = gridBot - ch*1.15;
+  }
+  $('tutoText').textContent=st.msg;
+  syncCards();
+}
 
 /* ---------- Géométrie ---------- */
 let W=0,H=0,dpr=1,cw=60,ch=66,boardL=0,gridTop=10,gridBot=0,arroH=46;
@@ -193,6 +258,14 @@ function startLevel(i){
   zombies=[]; bullets=[]; drops=[]; sprays=[]; splats=[]; particles=[]; popups=[]; rings=[];
   arro = new Array(COLS).fill(true);
   selected=null; pelleMode=false; cdLeft={}; shake=0; skyT=6;
+  finalShown=false; clearTimeout(cineTimer); $('ovCine').hidden=true;
+  // tutoriel (niveau démo) : scénario guidé, pas de pluie de rosée automatique
+  tuto = L.tuto ? {i:-1} : null;
+  $('tutoBubble').hidden = !tuto;
+  if (tuto){
+    skyT = 1e9;
+    if (IMG.plant_cracheur) { $('tutoFace').src=IMG.plant_cracheur.src; }
+  }
   // file d'apparition : chaque groupe du script est étalé sur des colonnes aléatoires
   queue=[]; waveN=L.script.length; waveI=0;
   L.script.forEach(([t,n,...types],gi)=>{
@@ -210,17 +283,24 @@ function startLevel(i){
   buildCards();
   syncHud();
   state='playing'; startLoop();
+  if (tuto) advanceTuto();   // après resize : les cases ciblées existent
 }
 
 /* ---------- Plantation ---------- */
 function placePlant(type, c, r){
   const P=PLANTS[type];
   if (!P || grid[r][c] || dew<P.cost || (cdLeft[type]||0)>0) return false;
+  if (tuto){
+    const st=TUTO[tuto.i];
+    if (!st || !st.place || type!==st.place[0] || c!==st.place[1] || r!==st.place[2]) return false;
+  }
   dew -= P.cost;
-  grid[r][c] = {type, hp:P.hp, maxHp:P.hp, shootT:1+Math.random()*0.5, prodT:5+Math.random()*2,
+  grid[r][c] = {type, hp:P.hp, maxHp:P.hp, shootT:1+Math.random()*0.5,
+                prodT: tuto ? 2.2 : 5+Math.random()*2,
                 fuse: type==='bombe' ? 1.1 : 0, bob:Math.random()*6};
   cdLeft[type]=P.cd;
   sfx.plant(); syncHud();
+  if (tuto && TUTO[tuto.i].place) advanceTuto();
   return true;
 }
 function removePlant(c, r){
@@ -232,8 +312,34 @@ function spawnZombie(q){
   zombies.push({type:q.type, def, lane:q.lane, y:-ch*0.4, hp:def.hp, max:def.hp, slow:0, wob:Math.random()*6});
   spawnedN++;
   if (q.g!==undefined && q.g>waveI){ waveI=q.g; }
-  if (q.g===waveN-1 && !spawnZombie.fin){ spawnZombie.fin=true; banner('🧟 Vague finale !'); sfx.bad(); }
+  if (q.g===waveN-1 && !finalShown){
+    finalShown=true;
+    banner('🧟 Vague finale !'); sfx.bad(); sfx.groan();
+    voice('Zombie attaque !', 0.6);
+  }
+  if (def.boss && state==='playing') startCine(zombies[zombies.length-1]);
 }
+
+/* ---------- Cinématique d'entrée de boss ---------- */
+function startCine(z){
+  state='cine';                       // la boucle s'arrête, les CSS animent la scène
+  try{ if (IMG[z.def.img]) $('cineImg').src=IMG[z.def.img].src; }catch(e){}
+  $('cineName').textContent=z.def.name;
+  $('cineText').textContent=CINE_LINES[z.type] || 'GRRRAAAH !';
+  $('ovCine').hidden=false;
+  sfx.groan();
+  voice(z.def.name + ' attaque !', 0.5);
+  cineTimer=setTimeout(endCine, 4500);
+}
+function endCine(){
+  if (state!=='cine') return;
+  clearTimeout(cineTimer);
+  $('ovCine').hidden=true;
+  state='playing';
+  if (document.hidden){ pauseGame(); return; }   // contrat de pause
+  startLoop();
+}
+$('ovCine').addEventListener('pointerdown', endCine);
 
 /* ---------- Boucle ---------- */
 function startLoop(){
@@ -250,6 +356,12 @@ function tick(now){
 
 function update(dt){
   levelT += dt;
+  // tutoriel : étapes qui se valident toutes seules
+  if (tuto){
+    const st=TUTO[tuto.i];
+    if (st && st.dew && dew>=st.dew) advanceTuto();
+    else if (st && st.waitClear && !zombies.length) advanceTuto();
+  }
   // apparitions
   while (queue.length && queue[0].t<=levelT) spawnZombie(queue.shift());
   // recharges de cartes
@@ -289,9 +401,9 @@ function update(dt){
     if (p.type==='fraisoleil'){
       p.prodT -= dt;
       if (p.prodT<=0){
-        p.prodT = 8;
+        p.prodT = tuto ? 3 : 8;
         drops.push({x:cellX(c)+ (Math.random()*0.5-0.25)*cw, y:cellY(r)-ch*0.3, vy:40,
-                    landY:cellY(r)+ch*0.22, life:9, val:25});
+                    landY:cellY(r)+ch*0.22, life:9, val: tuto ? 50 : 25});
       }
     }
     if (p.type==='cracheur' || p.type==='givree'){
@@ -375,8 +487,8 @@ function update(dt){
     if (popups[i].life<=0) popups.splice(i,1);
   }
   shake = Math.max(0, shake - shake*8*dt - 0.4*dt);
-  // victoire
-  if (!queue.length && !zombies.length && spawnedN>0) { finishWin(); return; }
+  // victoire (le tutoriel se termine par sa dernière bulle, pas ici)
+  if (!tuto && !queue.length && !zombies.length && spawnedN>0) { finishWin(); return; }
   // rafraîchit les cartes ~5 fois/s
   cardSync -= dt;
   if (cardSync<=0){ cardSync=0.2; syncCards(); }
@@ -403,14 +515,16 @@ function starsFor(){
 }
 function finishWin(){
   state='won';
+  if (tuto){ tuto=null; $('tutoBubble').hidden=true; }
   score += 500;
-  const st=starsFor(), i=levelIndex;
+  const st = LEVELS[levelIndex].tuto ? 3 : starsFor(), i=levelIndex;
   save.stars[i]=Math.max(save.stars[i]||0, st);
   if (score>(save.best[i]||0)) save.best[i]=score;
   save.unlocked=Math.max(save.unlocked, Math.min(i+2, LEVELS.length));
   Storage.save(save);
   $('winStars').innerHTML=[1,2,3].map(n=>`<span class="${n<=st?'on':'off'}">★</span>`).join('');
-  $('winTitle').textContent = i===LEVELS.length-1 ? 'Le Baron est compoté !' :
+  $('winTitle').textContent = LEVELS[i].tuto ? 'Leçon terminée !' :
+                              i===LEVELS.length-1 ? 'Le Baron est compoté !' :
                               LEVELS[i].boss ? 'Boss vaincu !' : 'Verger défendu !';
   $('winScore').textContent=score;
   $('winBest').textContent='Record : '+save.best[i];
@@ -431,6 +545,7 @@ function pauseGame(){
   if (state!=='playing') return;
   state='paused';
   cancelAnimationFrame(rafId); rafId=0;
+  try{ speechSynthesis.cancel(); }catch(e){}
   ovPause.hidden=false;
 }
 function resumeGame(){
@@ -546,6 +661,13 @@ function render(tNow){
     drawSprite(ctx,'drop',d.x,d.y+Math.sin(tNow*3+d.landY)*2,cw*0.48);
     ctx.globalAlpha=1;
   }
+  // tutoriel : la case cible clignote
+  if (tuto && TUTO[tuto.i] && TUTO[tuto.i].place){
+    const [,tc,tr]=TUTO[tuto.i].place;
+    const k=0.5+0.5*Math.sin(tNow*5);
+    ctx.strokeStyle=`rgba(255,110,165,${0.4+0.55*k})`; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.roundRect(boardL+tc*cw+3,gridTop+tr*ch+3,cw-6,ch-6,12); ctx.stroke();
+  }
   // sélection : surligne la case visée
   if ((selected||pelleMode) && hoverCell){
     const [hc,hr]=hoverCell;
@@ -590,8 +712,13 @@ function buildCards(){
     b.append(im,cost,cd);
     b.addEventListener('click',()=>{
       if (state!=='playing') return;
+      if (tuto){
+        const st=TUTO[tuto.i];
+        if (!st || !(st.card===id || (st.place && st.place[0]===id))) return;
+      }
       pelleMode=false;
       selected = selected===id ? null : id;
+      if (tuto && selected===id && TUTO[tuto.i].card===id) advanceTuto();
       syncCards();
     });
     bar.appendChild(b);
@@ -601,7 +728,7 @@ function buildCards(){
   const pim=document.createElement('img'); pim.alt='Pelle'; if (IMG.pelle) pim.src=IMG.pelle.src;
   pb.appendChild(pim);
   pb.addEventListener('click',()=>{
-    if (state!=='playing') return;
+    if (state!=='playing' || tuto) return;
     selected=null; pelleMode=!pelleMode; syncCards();
   });
   bar.appendChild(pb);
@@ -611,8 +738,10 @@ function syncCards(){
     const id=b.dataset.id;
     if (!id){ b.classList.toggle('sel', pelleMode); return; }
     const P=PLANTS[id], left=cdLeft[id]||0;
+    const st = tuto && TUTO[tuto.i];
     b.classList.toggle('sel', selected===id);
     b.classList.toggle('poor', dew<P.cost);
+    b.classList.toggle('glow', !!(st && (st.card===id || (st.place && st.place[0]===id && selected!==id))));
     b.querySelector('.cd').style.height = left>0 ? (left/P.cd*100)+'%' : '0%';
   });
   $('dewNum').textContent=Math.floor(dew);
@@ -636,6 +765,7 @@ cv.addEventListener('pointerdown', e=>{
     if ((d.x-x)**2+(d.y-y)**2 < (cw*0.45)**2){
       dew += d.val; drops.splice(i,1);
       popup(d.x,d.y,'+'+d.val+' 💧'); sfx.dew(); syncCards();
+      if (tuto && TUTO[tuto.i] && TUTO[tuto.i].collect) advanceTuto();
       return;
     }
   }
@@ -653,6 +783,9 @@ $('btnMute').addEventListener('click', ()=>{ save.muted=!save.muted; Storage.sav
 function toMenu(){
   state='home'; cancelAnimationFrame(rafId); rafId=0;
   Storage.save(save);
+  tuto=null; $('tutoBubble').hidden=true;
+  clearTimeout(cineTimer); $('ovCine').hidden=true;
+  try{ speechSynthesis.cancel(); }catch(e){}
   gameEl.hidden=true; homeEl.hidden=false;
   ovPause.hidden=ovWin.hidden=ovLose.hidden=true;
   renderHome();
@@ -718,7 +851,39 @@ function openLevel(i){
   ovLevel.hidden=false;
 }
 $('btnPlClose').addEventListener('click', ()=>{ ovLevel.hidden=true; });
-$('btnPlay').addEventListener('click', ()=>{ ovLevel.hidden=true; startLevel(levelIndex); });
+$('btnPlay').addEventListener('click', ()=>{
+  ovLevel.hidden=true;
+  const L=LEVELS[levelIndex];
+  if (L.unlock && !save.seenU[L.unlock]) showUnlock(L.unlock, ()=>startLevel(levelIndex));
+  else startLevel(levelIndex);
+});
+
+/* ---------- Bulle du tutoriel ---------- */
+$('tutoBubble').addEventListener('click', ()=>{
+  if (!tuto || state!=='playing') return;
+  const st=TUTO[tuto.i];
+  if (!st || !st.tap) return;
+  if (st.end){ finishWin(); return; }
+  advanceTuto();
+});
+
+/* ---------- Aide & déblocages ---------- */
+$('btnHelp').addEventListener('click', ()=>{ $('ovHelp').hidden=false; });
+$('btnHelpClose').addEventListener('click', ()=>{ $('ovHelp').hidden=true; });
+function showUnlock(id, then){
+  const P=PLANTS[id], U=UNLOCKS[id];
+  if (IMG[P.img]) $('unImg').src=IMG[P.img].src;
+  $('unName').textContent=P.name+' · 💧'+P.cost;
+  $('unDesc').textContent=U.desc;
+  $('unHow').textContent='💡 '+U.how;
+  unlockThen=()=>{ save.seenU[id]=1; Storage.save(save); then(); };
+  $('ovUnlock').hidden=false;
+}
+$('btnUnlock').addEventListener('click', ()=>{
+  $('ovUnlock').hidden=true;
+  const f=unlockThen; unlockThen=null;
+  if (f) f();
+});
 
 /* ---------- Redimensionnement ---------- */
 new ResizeObserver(()=>{ resize(); if(state!=='home') render(performance.now()/1000); }).observe(cv);

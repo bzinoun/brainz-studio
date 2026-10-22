@@ -23,6 +23,7 @@
       <p id="menuStars"></p>
       <div id="menuBtns">
         <button class="primary" id="btnStart">▶&nbsp; Jouer</button>
+        <button id="btnHelp">❓ Comment jouer</button>
         <button id="btnMuteMenu">🔊 Son</button>
       </div>
       <p id="menuBrainz"><img id="menuLogo" alt="" hidden> Un jeu Brainz Studio</p>
@@ -86,6 +87,24 @@
           </div>
         </div>
       </div>
+
+      <!-- Cinématique d'entrée de boss -->
+      <div class="overlay" id="ovCine" hidden>
+        <div id="cineBox">
+          <img id="cineImg" alt="">
+          <div id="cineCard">
+            <div id="cineName"></div>
+            <div id="cineText"></div>
+            <div class="cnext">toucher pour continuer ▸</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bulle du tutoriel (niveau démo) -->
+      <div id="tutoBubble" hidden>
+        <img id="tutoFace" alt="">
+        <div id="tutoText"></div>
+      </div>
     </div>
 
     <div class="hud" id="cardBar"></div>
@@ -101,6 +120,29 @@
         <button class="primary" id="btnPlay">Défendre !</button>
         <button id="btnPlClose">Retour</button>
       </div>
+    </div>
+  </div>
+
+  <div class="overlay appwide" id="ovHelp" hidden>
+    <div class="card">
+      <h2>Comment jouer ?</h2>
+      <div class="helprow"><span>🧟</span><p>Les zombifruits <b>descendent du haut</b>. S'ils atteignent le bas d'une colonne sans arrosoir, c'est perdu !</p></div>
+      <div class="helprow"><span>💧</span><p>Ramasse les <b>gouttes de rosée</b> (elles tombent du ciel et poussent sur les Fraisoleils) : c'est ta monnaie.</p></div>
+      <div class="helprow"><span>🍒</span><p>Touche une <b>carte</b> en bas, puis une <b>case</b> pour planter. La pelle retire une plante.</p></div>
+      <div class="helprow"><span>🚿</span><p>Chaque colonne a un <b>arrosoir de secours</b> : il stoppe une percée… une seule fois !</p></div>
+      <div class="helprow"><span>⭐</span><p>3 étoiles = victoire + arrosoirs intacts + aucune plante perdue.</p></div>
+      <button class="primary" id="btnHelpClose">Compris !</button>
+    </div>
+  </div>
+
+  <div class="overlay appwide" id="ovUnlock" hidden>
+    <div class="card">
+      <h2>✨ Nouveau fruit débloqué !</h2>
+      <img id="unImg" alt="">
+      <div id="unName"></div>
+      <p id="unDesc" style="margin:0;font-size:14px;color:var(--fg-dim);"></p>
+      <p id="unHow"></p>
+      <button class="primary" id="btnUnlock">Compris, à moi de jouer !</button>
     </div>
   </div>
 

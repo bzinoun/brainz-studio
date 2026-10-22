@@ -184,6 +184,56 @@ canvas#cv{
   @keyframes cardIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 }
 
+/* ---------- Aide & déblocages ---------- */
+.helprow{display:flex;gap:10px;align-items:flex-start;text-align:left;width:100%;}
+.helprow span{font-size:22px;line-height:1.2;flex:none;}
+.helprow p{margin:0;font-size:13.5px;line-height:1.45;color:var(--fg-dim);}
+.helprow b{color:var(--fg);}
+#unImg{width:112px;height:112px;}
+#unName{font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--accent);}
+#unHow{
+  margin:0;background:var(--panel2);border:2px solid var(--line);border-radius:16px;
+  padding:10px 14px;font-size:13px;line-height:1.5;text-align:left;
+}
+@media (prefers-reduced-motion:no-preference){
+  #unImg{animation:unPop .8s cubic-bezier(.2,1.6,.35,1) both, unFloat 2s ease-in-out .8s infinite;}
+  @keyframes unPop{0%{transform:scale(.2) rotate(-14deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+  @keyframes unFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+}
+
+/* ---------- Tutoriel (niveau démo) ---------- */
+#tutoBubble{
+  position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:6;
+  display:flex;gap:10px;align-items:center;width:min(370px,94%);box-sizing:border-box;
+  background:var(--panel);border:3px solid var(--line);border-radius:20px;padding:10px 14px;
+  box-shadow:0 10px 28px rgba(214,70,125,.3);cursor:pointer;
+}
+#tutoFace{width:46px;height:46px;flex:none;}
+#tutoText{font-size:13.5px;line-height:1.4;font-weight:700;}
+.pcard.glow{border-color:var(--accent);}
+@media (prefers-reduced-motion:no-preference){
+  .pcard.glow{animation:cardGlow 1s ease-in-out infinite;}
+  @keyframes cardGlow{0%,100%{box-shadow:0 3px 0 rgba(255,150,190,.35)}50%{box-shadow:0 0 16px rgba(255,110,165,.95)}}
+}
+
+/* ---------- Cinématique de boss ---------- */
+#ovCine{background:rgba(44,22,50,.6);cursor:pointer;}
+#cineBox{display:flex;flex-direction:column;align-items:center;gap:14px;width:min(340px,90%);}
+#cineImg{width:150px;height:150px;filter:drop-shadow(0 12px 22px rgba(0,0,0,.4));}
+#cineCard{
+  background:var(--panel);border:3px solid var(--line);border-radius:22px;
+  padding:14px 18px;width:100%;box-sizing:border-box;text-align:left;
+}
+#cineName{font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--zombi);}
+#cineText{font-size:15px;line-height:1.45;margin-top:3px;}
+#cineCard .cnext{text-align:right;color:var(--fg-dim);font-size:12px;font-weight:800;margin-top:4px;}
+@media (prefers-reduced-motion:no-preference){
+  #cineImg{animation:cineDrop .8s cubic-bezier(.2,1.3,.4,1) both, cineShake 2.4s ease-in-out .9s infinite;}
+  #cineCard{animation:cardIn .3s cubic-bezier(.2,1.4,.4,1) .55s both;}
+  @keyframes cineDrop{0%{transform:translateY(-240px) scale(.5) rotate(-12deg);opacity:0}70%{transform:translateY(12px) scale(1.05)}100%{transform:translateY(0) scale(1)}}
+  @keyframes cineShake{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+}
+
 /* ---------- Intro Brainz Studio ---------- */
 #intro{
   position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
