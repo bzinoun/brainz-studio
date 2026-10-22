@@ -22,17 +22,18 @@
       <h1 id="menuTitle">Fruit Kawaii<br><span class="vs">vs</span><br>Fruit Zombifié</h1>
       <p id="menuStars"></p>
       <div id="menuBtns">
-        <button class="primary" id="btnStart">▶&nbsp; Jouer</button>
-        <button id="btnHelp">❓ Comment jouer</button>
+        <button class="primary" id="btnStart" data-t="play">▶&nbsp; Jouer</button>
+        <button id="btnHelp" data-t="help">❓ Comment jouer</button>
         <button id="btnMuteMenu">🔊 Son</button>
+        <button id="btnLang">🌐 English</button>
       </div>
-      <p id="menuBrainz"><img id="menuLogo" alt="" hidden> Un jeu Brainz Studio</p>
+      <p id="menuBrainz"><img id="menuLogo" alt="" hidden> <span data-t="brainz">Un jeu Brainz Studio</span></p>
     </div>
   </div>
 
   <div id="home" hidden>
     <div id="homeHead">
-      <h1>Fruit Kawaii <span class="vs">vs</span> Fruit Zombifié</h1>
+      <h1 id="homeTitle">Fruit Kawaii <span class="vs">vs</span> Fruit Zombifié</h1>
     </div>
     <p class="tag" id="heroTag">Le Baron Zombifié attaque le Verger : plante tes fruits et défends chaque rangée&nbsp;!</p>
     <div id="lvlScroll"><div id="lvlList"></div></div>
@@ -54,11 +55,11 @@
       <div class="overlay" id="ovPause" hidden>
         <div class="card">
           <div class="big-emoji">🌸</div>
-          <h2>Petite pause</h2>
+          <h2 data-t="pause">Petite pause</h2>
           <div class="btns">
-            <button class="primary" id="btnResume">Reprendre</button>
-            <button id="btnRestart1">Recommencer</button>
-            <button id="btnMenu1">Niveaux</button>
+            <button class="primary" id="btnResume" data-t="resume">Reprendre</button>
+            <button id="btnRestart1" data-t="restart">Recommencer</button>
+            <button id="btnMenu1" data-t="levels">Niveaux</button>
           </div>
         </div>
       </div>
@@ -67,11 +68,11 @@
         <div class="card">
           <div class="stars" id="winStars"></div>
           <h2 id="winTitle">Verger défendu&nbsp;!</h2>
-          <div class="score-line">Score : <b id="winScore">0</b><br><span id="winBest"></span></div>
+          <div class="score-line"><span data-t="score">Score :</span> <b id="winScore">0</b><br><span id="winBest"></span></div>
           <div class="btns">
-            <button class="primary" id="btnNext">Suite ▶</button>
-            <button id="btnRestart2">Rejouer</button>
-            <button id="btnMenu2">Niveaux</button>
+            <button class="primary" id="btnNext" data-t="next">Suite ▶</button>
+            <button id="btnRestart2" data-t="replay">Rejouer</button>
+            <button id="btnMenu2" data-t="levels">Niveaux</button>
           </div>
         </div>
       </div>
@@ -79,11 +80,11 @@
       <div class="overlay" id="ovLose" hidden>
         <div class="card">
           <div class="big-emoji">🧟</div>
-          <h2>Les zombifruits sont passés…</h2>
-          <div class="score-line">Score : <b id="loseScore">0</b></div>
+          <h2 data-t="loseTitle">Les zombifruits sont passés…</h2>
+          <div class="score-line"><span data-t="score">Score :</span> <b id="loseScore">0</b></div>
           <div class="btns">
-            <button class="primary" id="btnRestart3">Réessayer</button>
-            <button id="btnMenu3">Niveaux</button>
+            <button class="primary" id="btnRestart3" data-t="retry">Réessayer</button>
+            <button id="btnMenu3" data-t="levels">Niveaux</button>
           </div>
         </div>
       </div>
@@ -95,7 +96,7 @@
           <div id="cineCard">
             <div id="cineName"></div>
             <div id="cineText"></div>
-            <div class="cnext">toucher pour continuer ▸</div>
+            <div class="cnext" data-t="tapContinue">toucher pour continuer ▸</div>
           </div>
         </div>
       </div>
@@ -117,32 +118,28 @@
       <div class="stars" id="plStars"></div>
       <div class="score-line" id="plBest"></div>
       <div class="btns">
-        <button class="primary" id="btnPlay">Défendre !</button>
-        <button id="btnPlClose">Retour</button>
+        <button class="primary" id="btnPlay" data-t="defend">Défendre !</button>
+        <button id="btnPlClose" data-t="back">Retour</button>
       </div>
     </div>
   </div>
 
   <div class="overlay appwide" id="ovHelp" hidden>
     <div class="card">
-      <h2>Comment jouer ?</h2>
-      <div class="helprow"><span>🧟</span><p>Les zombifruits <b>descendent du haut</b>. S'ils atteignent le bas d'une colonne sans arrosoir, c'est perdu !</p></div>
-      <div class="helprow"><span>💧</span><p>Ramasse les <b>gouttes de rosée</b> (elles tombent du ciel et poussent sur les Fraisoleils) : c'est ta monnaie.</p></div>
-      <div class="helprow"><span>🍒</span><p>Touche une <b>carte</b> en bas, puis une <b>case</b> pour planter. La pelle retire une plante.</p></div>
-      <div class="helprow"><span>🚿</span><p>Chaque colonne a un <b>arrosoir de secours</b> : il stoppe une percée… une seule fois !</p></div>
-      <div class="helprow"><span>⭐</span><p>3 étoiles = victoire + arrosoirs intacts + aucune plante perdue.</p></div>
-      <button class="primary" id="btnHelpClose">Compris !</button>
+      <h2 data-t="helpTitle">Comment jouer ?</h2>
+      <div id="helpRows" style="display:flex;flex-direction:column;gap:10px;width:100%;"></div>
+      <button class="primary" id="btnHelpClose" data-t="gotIt">Compris !</button>
     </div>
   </div>
 
   <div class="overlay appwide" id="ovUnlock" hidden>
     <div class="card">
-      <h2>✨ Nouveau fruit débloqué !</h2>
+      <h2 data-t="unlockTitle">✨ Nouveau fruit débloqué !</h2>
       <img id="unImg" alt="">
       <div id="unName"></div>
       <p id="unDesc" style="margin:0;font-size:14px;color:var(--fg-dim);"></p>
       <p id="unHow"></p>
-      <button class="primary" id="btnUnlock">Compris, à moi de jouer !</button>
+      <button class="primary" id="btnUnlock" data-t="unlockBtn">Compris, à moi de jouer !</button>
     </div>
   </div>
 
@@ -152,7 +149,7 @@
       <img id="introLogo" alt="" hidden>
       <div id="introEmoji" hidden>🧠</div>
       <div id="introName">Brainz Studio</div>
-      <div id="introSub">présente</div>
+      <div id="introSub" data-t="presents">présente</div>
     </div>
   </div>
 

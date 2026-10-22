@@ -14,67 +14,158 @@
 
 const COLS = 5, ROWS = 7;
 
+/* ---------- Textes bilingues : {fr, en}, lus via tr() ---------- */
+let LANG = 'fr';   // fixé au démarrage : save.lang, sinon langue du navigateur
+function tr(v){ return v && typeof v==='object' && ('fr' in v) ? (v[LANG] ?? v.fr) : v; }
+
 /* ---------- Défenseurs ---------- */
 const PLANTS = {
-  fraisoleil:{name:'Fraisoleil',      cost:50,  hp:60,  cd:7,  img:'plant_fraisoleil', desc:'Produit de la rosée'},
-  cracheur:  {name:'Cracheur',        cost:100, hp:90,  cd:6,  img:'plant_cracheur',   desc:'Tire des pépins'},
-  coco:      {name:'Coco-Mur',        cost:50,  hp:420, cd:14, img:'plant_coco',       desc:'Bloque les zombifruits'},
-  givree:    {name:'Myrtille Givrée', cost:150, hp:90,  cd:9,  img:'plant_givree',     desc:'Ralentit de givre'},
-  bombe:     {name:'Bombe Cerise',    cost:150, hp:999, cd:18, img:'plant_bombe',      desc:'Explose la zone'},
+  fraisoleil:{name:{fr:'Fraisoleil', en:'Strawflower'}, cost:50, hp:60, cd:7, img:'plant_fraisoleil',
+              desc:{fr:'Produit de la rosée', en:'Makes dew drops'}},
+  cracheur:  {name:{fr:'Cracheur', en:'Seed Spitter'}, cost:100, hp:90, cd:6, img:'plant_cracheur',
+              desc:{fr:'Tire des pépins', en:'Shoots seeds'}},
+  coco:      {name:{fr:'Coco-Mur', en:'Coco-Wall'}, cost:50, hp:420, cd:14, img:'plant_coco',
+              desc:{fr:'Bloque les zombifruits', en:'Blocks zombifruits'}},
+  givree:    {name:{fr:'Myrtille Givrée', en:'Frost Berry'}, cost:150, hp:90, cd:9, img:'plant_givree',
+              desc:{fr:'Ralentit de givre', en:'Slows with frost'}},
+  bombe:     {name:{fr:'Bombe Cerise', en:'Boom Cherry'}, cost:150, hp:999, cd:18, img:'plant_bombe',
+              desc:{fr:'Explose la zone', en:'Blows up the area'}},
 };
 
 /* ---------- Zombifruits (vitesse en cases/s, dmg en PV/s) ---------- */
 const ZOMBIES = {
-  pomme:   {name:'Pomme Zombifiée',  hp:100,  speed:.105, dmg:28, pts:10, img:'z_pomme'},
-  citron:  {name:'Citron Pressé',    hp:70,   speed:.21,  dmg:28, pts:15, img:'z_citron'},
-  orange:  {name:'Orange Casquée',   hp:230,  speed:.085, dmg:28, pts:20, img:'z_orange'},
-  pasteque:{name:'Pastèque Blindée', hp:430,  speed:.06,  dmg:42, pts:30, img:'z_pasteque'},
-  raisin:  {name:'Grappe Grognon',   hp:160,  speed:.09,  dmg:28, pts:20, img:'z_raisin'},
-  baron:   {name:'Baron Zombifié',   hp:1600, speed:.042, dmg:80, pts:150, img:'z_baron', boss:true},
+  pomme:   {name:{fr:'Pomme Zombifiée', en:'Zombified Apple'},    hp:100,  speed:.105, dmg:28, pts:10, img:'z_pomme'},
+  citron:  {name:{fr:'Citron Pressé', en:'Squeezed Lemon'},      hp:70,   speed:.21,  dmg:28, pts:15, img:'z_citron'},
+  orange:  {name:{fr:'Orange Casquée', en:'Helmet Orange'},      hp:230,  speed:.085, dmg:28, pts:20, img:'z_orange'},
+  pasteque:{name:{fr:'Pastèque Blindée', en:'Armored Watermelon'}, hp:430, speed:.06, dmg:42, pts:30, img:'z_pasteque'},
+  raisin:  {name:{fr:'Grappe Grognon', en:'Grumpy Grapes'},      hp:160,  speed:.09,  dmg:28, pts:20, img:'z_raisin'},
+  baron:   {name:{fr:'Baron Zombifié', en:'Zombified Baron'},    hp:1600, speed:.042, dmg:80, pts:150, img:'z_baron', boss:true},
 };
 
 /* ---------- Niveaux ----------
    script : [t, n, ...types] = à t secondes, n zombifruits tirés au
    hasard parmi types (étalés de 1.6 s en 1.6 s, colonnes aléatoires). */
 const LEVELS = [
- {name:'Leçon de jardinage', story:'Petite démo guidée : apprends à défendre le verger, pas à pas, sans danger.', tuto:true,
+ {name:{fr:'Leçon de jardinage', en:'Gardening Lesson'}, tuto:true,
+  story:{fr:'Petite démo guidée : apprends à défendre le verger, pas à pas, sans danger.',
+         en:'A guided demo: learn to defend the orchard, step by step, with no danger.'},
   cards:['fraisoleil','cracheur'], dew:50, script:[]},
- {name:'Premiers pépins', story:'Les pommes zombifiées arrivent ! Plante des Fraisoleils pour la rosée et des Cracheurs pour tirer.',
+ {name:{fr:'Premiers pépins', en:'First Seeds'},
+  story:{fr:'Les pommes zombifiées arrivent ! Plante des Fraisoleils pour la rosée et des Cracheurs pour tirer.',
+         en:'The zombified apples are coming! Plant Strawflowers for dew and Seed Spitters to shoot.'},
   cards:['cracheur','fraisoleil'], dew:150,
   script:[[10,1,'pomme'],[26,1,'pomme'],[42,2,'pomme'],[58,2,'pomme'],[74,3,'pomme']]},
- {name:'La haie tient bon', story:'Les Citrons Pressés courent vite. Le Coco-Mur est là pour encaisser.',
+ {name:{fr:'La haie tient bon', en:'The Hedge Holds'},
+  story:{fr:'Les Citrons Pressés courent vite. Le Coco-Mur est là pour encaisser.',
+         en:'Squeezed Lemons run fast. The Coco-Wall is here to take the hits.'},
   cards:['cracheur','fraisoleil','coco'], dew:125, unlock:'coco',
   script:[[10,1,'pomme'],[24,1,'citron'],[38,2,'pomme'],[52,2,'pomme','citron'],[66,3,'pomme','citron'],[82,4,'pomme','pomme','citron']]},
- {name:'Casque de gland', story:'Les Oranges Casquées encaissent les pépins. Une Bombe Cerise règle ça.',
+ {name:{fr:'Casque de gland', en:'Acorn Helmet'},
+  story:{fr:'Les Oranges Casquées encaissent les pépins. Une Bombe Cerise règle ça.',
+         en:'Helmet Oranges shrug off seeds. A Boom Cherry will sort them out.'},
   cards:['cracheur','fraisoleil','coco','bombe'], dew:125, unlock:'bombe',
   script:[[10,1,'pomme'],[24,1,'orange'],[38,2,'pomme','citron'],[52,2,'orange','pomme'],[68,3,'pomme','citron'],[84,4,'orange','pomme','citron']]},
- {name:'Givre et pépins', story:'La Myrtille Givrée ralentit tout ce qu’elle touche. Fraîcheur garantie !',
+ {name:{fr:'Givre et pépins', en:'Frost and Seeds'},
+  story:{fr:'La Myrtille Givrée ralentit tout ce qu’elle touche. Fraîcheur garantie !',
+         en:'The Frost Berry slows everything it touches. Guaranteed freshness!'},
   cards:['cracheur','fraisoleil','coco','givree','bombe'], dew:125, unlock:'givree',
   script:[[10,1,'pomme'],[22,2,'citron'],[36,2,'orange'],[50,3,'pomme','citron'],[64,3,'orange','pomme'],[80,4,'pomme','citron','orange'],[96,4,'orange','citron','pomme']]},
- {name:'La pastèque qui roule', story:'Une Pastèque Blindée écrase tout sur son passage. Vise-la en priorité !',
+ {name:{fr:'La pastèque qui roule', en:'The Rolling Watermelon'},
+  story:{fr:'Une Pastèque Blindée écrase tout sur son passage. Vise-la en priorité !',
+         en:'An Armored Watermelon crushes everything in its path. Take it down first!'},
   cards:['cracheur','fraisoleil','coco','givree','bombe'], dew:100,
   script:[[10,2,'pomme'],[26,1,'pasteque'],[42,3,'pomme','citron'],[58,2,'orange','pasteque'],[74,4,'pomme','citron','orange'],[92,4,'pasteque','orange','pomme']]},
- {name:'La grappe grogne', story:'Les Grappes Grognons débarquent en famille. Ça fait beaucoup de grimaces.',
+ {name:{fr:'La grappe grogne', en:'The Grumbling Grapes'},
+  story:{fr:'Les Grappes Grognons débarquent en famille. Ça fait beaucoup de grimaces.',
+         en:'The Grumpy Grapes arrive with the whole family. That is a lot of frowning.'},
   cards:['cracheur','fraisoleil','coco','givree','bombe'], dew:100,
   script:[[8,2,'pomme','raisin'],[24,2,'raisin','citron'],[40,3,'orange','raisin'],[56,3,'pomme','raisin','citron'],[72,4,'raisin','orange','pasteque'],[90,5,'raisin','pomme','citron','orange']]},
- {name:'La grande marée moisie', story:'Toute l’armée du Baron attaque en même temps. Tiens bon, le verger compte sur toi !',
+ {name:{fr:'La grande marée moisie', en:'The Great Moldy Tide'},
+  story:{fr:'Toute l’armée du Baron attaque en même temps. Tiens bon, le verger compte sur toi !',
+         en:'The Baron’s whole army attacks at once. Hold on, the orchard is counting on you!'},
   cards:['cracheur','fraisoleil','coco','givree','bombe'], dew:100,
   script:[[8,2,'pomme','citron'],[22,3,'orange','raisin'],[36,3,'pomme','pasteque','citron'],[50,4,'raisin','orange','pomme'],[66,5,'pomme','citron','orange','raisin'],[84,6,'pasteque','raisin','orange','pomme','citron']]},
- {name:'Le Baron Zombifié', story:'Le Baron Zombifié vient en personne, haut-de-forme moisi et tout. Dernier combat !', boss:true,
+ {name:{fr:'Le Baron Zombifié', en:'The Zombified Baron'}, boss:true,
+  story:{fr:'Le Baron Zombifié vient en personne, haut-de-forme moisi et tout. Dernier combat !',
+         en:'The Zombified Baron comes in person, moldy top hat and all. Final battle!'},
   cards:['cracheur','fraisoleil','coco','givree','bombe'], dew:125,
   script:[[8,2,'pomme','citron'],[22,3,'orange','raisin'],[38,1,'baron'],[44,3,'pomme','citron'],[60,4,'raisin','orange','pasteque'],[78,5,'pomme','citron','orange','raisin']]},
 ];
 
 /* Mise en avant des nouveaux fruits (« glow up ») au premier niveau qui les débloque */
 const UNLOCKS = {
-  coco:  {desc:'Un mur végétal ultra résistant qui bloque les zombifruits.',
-          how:'Place-le AU-DESSUS de tes tireurs (plus haut dans la colonne) : il encaisse les morsures pendant que les Cracheurs arrosent de pépins, bien à l’abri derrière lui.'},
-  bombe: {desc:'Elle grésille une seconde… puis balaie tous les zombifruits autour d’elle.',
-          how:'Pose-la au milieu d’un groupe compact ou sous une Orange Casquée trop coriace : BOUM, zone nettoyée. Usage unique : elle disparaît après l’explosion.'},
-  givree:{desc:'Ses pépins givrés ralentissent fortement les zombifruits touchés.',
-          how:'Vise les colonnes des Citrons Pressés trop rapides ou des gros costauds : gelés, ils restent deux fois plus longtemps sous le feu de tes Cracheurs.'},
+  coco:  {desc:{fr:'Un mur végétal ultra résistant qui bloque les zombifruits.',
+               en:'An ultra-tough plant wall that blocks the zombifruits.'},
+          how:{fr:'Place-le AU-DESSUS de tes tireurs (plus haut dans la colonne) : il encaisse les morsures pendant que les Cracheurs arrosent de pépins, bien à l’abri derrière lui.',
+               en:'Place it ABOVE your shooters (higher in the column): it soaks up the bites while your Seed Spitters keep firing, safe behind it.'}},
+  bombe: {desc:{fr:'Elle grésille une seconde… puis balaie tous les zombifruits autour d’elle.',
+               en:'It sizzles for a second… then wipes out every zombifruit around it.'},
+          how:{fr:'Pose-la au milieu d’un groupe compact ou sous une Orange Casquée trop coriace : BOUM, zone nettoyée. Usage unique : elle disparaît après l’explosion.',
+               en:'Drop it in the middle of a tight group or under a tough Helmet Orange: BOOM, area cleared. One use only: it disappears after exploding.'}},
+  givree:{desc:{fr:'Ses pépins givrés ralentissent fortement les zombifruits touchés.',
+               en:'Its frosty seeds strongly slow down any zombifruit they hit.'},
+          how:{fr:'Vise les colonnes des Citrons Pressés trop rapides ou des gros costauds : gelés, ils restent deux fois plus longtemps sous le feu de tes Cracheurs.',
+               en:'Aim at columns with Squeezed Lemons running too fast, or big tanky ones: frozen, they stay under your Seed Spitters’ fire twice as long.'}},
 };
-const CINE_LINES = { baron:'MWAHAHA ! Votre verger sera MA compote ! Mes zombifruits, ATTAQUEZ !' };
+const CINE_LINES = { baron:{fr:'MWAHAHA ! Votre verger sera MA compote ! Mes zombifruits, ATTAQUEZ !',
+                            en:'MWAHAHA! Your orchard will be MY compote! My zombifruits, ATTACK!'} };
+
+/* ---------- Interface : dictionnaire FR/EN ---------- */
+const STRINGS = {
+ fr:{
+  htmlTitle:'Fruit Kawaii vs Fruit Zombifié',
+  menuTitle:'Fruit Kawaii<br><span class="vs">vs</span><br>Fruit Zombifié',
+  homeTitle:'Fruit Kawaii <span class="vs">vs</span> Fruit Zombifié',
+  presents:'présente', brainz:'Un jeu Brainz Studio',
+  play:'▶&nbsp; Jouer', help:'❓ Comment jouer', soundOn:'🔊 Son', soundOff:'🔇 Son coupé', langBtn:'🌐 English',
+  menuPitch:'Défends le Verger Enchanté !',
+  stars:(t,m)=>`<span class="on">★</span> ${t} / ${m} étoiles`,
+  heroTag0:'Le Baron Zombifié attaque le Verger : plante tes fruits et défends chaque rangée !',
+  heroTagN:(d,n)=>`🍒 ${d}/${n} niveaux défendus — continue !`,
+  pause:'Petite pause', resume:'Reprendre', restart:'Recommencer', replay:'Rejouer', retry:'Réessayer', levels:'Niveaux',
+  score:'Score :', best:'Record :', never:'Jamais défendu', next:'Suite ▶',
+  loseTitle:'Les zombifruits sont passés…',
+  winDefault:'Verger défendu !', winBoss:'Boss vaincu !', winFinal:'Le Baron est compoté !', winTuto:'Leçon terminée !',
+  defend:'Défendre !', back:'Retour', gotIt:'Compris !',
+  helpTitle:'Comment jouer ?',
+  helpRows:[['🧟','Les zombifruits <b>descendent du haut</b>. S’ils atteignent le bas d’une colonne sans arrosoir, c’est perdu !'],
+            ['💧','Ramasse les <b>gouttes de rosée</b> (elles tombent du ciel et poussent sur les Fraisoleils) : c’est ta monnaie.'],
+            ['🍒','Touche une <b>carte</b> en bas, puis une <b>case</b> pour planter. La pelle retire une plante.'],
+            ['🚿','Chaque colonne a un <b>arrosoir de secours</b> : il stoppe une percée… une seule fois !'],
+            ['⭐','3 étoiles = victoire + arrosoirs intacts + aucune plante perdue.']],
+  unlockTitle:'✨ Nouveau fruit débloqué !', unlockBtn:'Compris, à moi de jouer !',
+  tapContinue:'toucher pour continuer ▸',
+  finalWave:'🧟 Vague finale !', zombieAttack:'Zombie attaque !', attacks:' attaque !',
+  splash:'Splash !', pelleTitle:'Pelle : retirer une plante',
+ },
+ en:{
+  htmlTitle:'Kawaii Fruit vs Zombie Fruit',
+  menuTitle:'Kawaii Fruit<br><span class="vs">vs</span><br>Zombie Fruit',
+  homeTitle:'Kawaii Fruit <span class="vs">vs</span> Zombie Fruit',
+  presents:'presents', brainz:'A Brainz Studio game',
+  play:'▶&nbsp; Play', help:'❓ How to play', soundOn:'🔊 Sound', soundOff:'🔇 Muted', langBtn:'🌐 Français',
+  menuPitch:'Defend the Enchanted Orchard!',
+  stars:(t,m)=>`<span class="on">★</span> ${t} / ${m} stars`,
+  heroTag0:'The Zombified Baron is attacking the Orchard: plant your fruits and hold every row!',
+  heroTagN:(d,n)=>`🍒 ${d}/${n} levels defended — keep going!`,
+  pause:'Little break', resume:'Resume', restart:'Restart', replay:'Play again', retry:'Try again', levels:'Levels',
+  score:'Score:', best:'Best:', never:'Never defended', next:'Next ▶',
+  loseTitle:'The zombifruits got through…',
+  winDefault:'Orchard defended!', winBoss:'Boss defeated!', winFinal:'The Baron is compote!', winTuto:'Lesson complete!',
+  defend:'Defend!', back:'Back', gotIt:'Got it!',
+  helpTitle:'How to play?',
+  helpRows:[['🧟','Zombifruits <b>march down from the top</b>. If one reaches the bottom of a column with no watering can left, you lose!'],
+            ['💧','Collect <b>dew drops</b> (they fall from the sky and grow on Strawflowers): that’s your currency.'],
+            ['🍒','Tap a <b>card</b> at the bottom, then a <b>cell</b> to plant. The shovel removes a plant.'],
+            ['🚿','Each column has a <b>backup watering can</b>: it stops one breakthrough… once!'],
+            ['⭐','3 stars = win + all watering cans intact + no plant lost.']],
+  unlockTitle:'✨ New fruit unlocked!', unlockBtn:'Got it, let’s play!',
+  tapContinue:'tap to continue ▸',
+  finalWave:'🧟 Final wave!', zombieAttack:'Zombies, attack!', attacks:' is attacking!',
+  splash:'Splash!', pelleTitle:'Shovel: remove a plant',
+ },
+};
+const STR = ()=>STRINGS[LANG];
 
 /* ---------- Sauvegarde (localStorage ici ; ytgame.game.saveData sur Playables) ---------- */
 const KEY = 'fvz-save-v2';
@@ -97,14 +188,16 @@ const Storage = {
   },
   save(d){ try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){} }
 };
-let save = Object.assign({unlocked:1, best:{}, stars:{}, muted:false, seenU:{}}, Storage.load());
+let save = Object.assign({unlocked:1, best:{}, stars:{}, muted:false, seenU:{}, lang:''}, Storage.load());
+LANG = save.lang || ((navigator.language||'fr').toLowerCase().startsWith('fr') ? 'fr' : 'en');
 
 /* ---------- Audio embarqué (ElevenLabs, générés par tools/gen-audio.py) ----------
    Chaque son garde un repli : synthèse WebAudio pour les bruitages,
    speechSynthesis pour les voix. Rien n'est requis, aucun réseau en jeu. */
 const SND = {};
 const SND_NAMES = ['sfx_groan','sfx_splat','sfx_boom','sfx_spray','sfx_pop','sfx_munch',
-                   'vx_zombie_attaque','vx_baron','vx_victoire'];
+                   'vx_zombie_attaque','vx_baron','vx_victoire',
+                   'vx_zombie_attaque_en','vx_baron_en','vx_victoire_en'];
 const sndActive = new Set();
 (function loadSounds(){
   for (const n of SND_NAMES){
@@ -157,13 +250,14 @@ const sfx = {
   lose(){ [330,262,196,147].forEach((f,i)=>tone(f,.25,'sawtooth',.07,i*0.13)); },
   groan(){ if (play('sfx_groan')) return; tone(72,.5,'sawtooth',.12); tone(56,.7,'sawtooth',.1,.2); tone(90,.45,'sawtooth',.08,.5); },
 };
-/* Voix : clip ElevenLabs embarqué si présent, sinon speechSynthesis locale */
+/* Voix : clip ElevenLabs embarqué si présent (suffixe _en en anglais), sinon speechSynthesis locale */
 function voice(text, pitch, clip){
   if (save.muted) return;
-  if (clip && play(clip)) return;
+  if (clip && play(LANG==='en' ? clip+'_en' : clip)) return;
   try{
     const u = new SpeechSynthesisUtterance(text);
-    u.lang='fr-FR'; u.rate=0.95; u.pitch=pitch===undefined?1:pitch;
+    u.lang = LANG==='en' ? 'en-US' : 'fr-FR';
+    u.rate=0.95; u.pitch=pitch===undefined?1:pitch;
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   }catch(e){}
 }
@@ -227,16 +321,26 @@ let tuto=null, finalShown=false, cineTimer=0, unlockThen=null;
 
 /* ---------- Tutoriel : scénario du niveau démo ---------- */
 const TUTO = [
- {msg:'Bienvenue dans le verger ! 🍒 Les zombifruits arrivent par le HAUT et descendent vers tes arrosoirs. (touche cette bulle pour continuer)', tap:true},
- {msg:'Commence par l’économie : touche la carte Fraisoleil 🍓 en bas de l’écran.', card:'fraisoleil'},
- {msg:'Maintenant, plante-le dans la case qui clignote !', place:['fraisoleil',2,5]},
- {msg:'Bravo ! Le Fraisoleil fabrique des gouttes de rosée 💧. Touche une goutte pour la ramasser.', collect:true},
- {msg:'Continue à ramasser la rosée jusqu’à 100 💧 : il en faut pour ton tireur.', dew:100},
- {msg:'Touche la carte Cracheur 🍒 : c’est lui qui tire des pépins.', card:'cracheur'},
- {msg:'Place-le AU-DESSUS du Fraisoleil, dans la case qui clignote : il protège toute sa colonne.', place:['cracheur',2,3]},
- {msg:'Un zombifruit attaque ta colonne ! Regarde ton Cracheur l’arroser de pépins… 🧟', spawn:['pomme',2], waitClear:true},
- {msg:'Dernier secret : si un zombifruit te dépasse, l’arrosoir de la colonne le stoppe — une seule fois ! Regarde à droite.', spawnLow:['citron',4], waitClear:true},
- {msg:'Parfait, tu sais tout ! Défends le Verger Enchanté ! 🍒⭐ (touche pour terminer)', tap:true, end:true},
+ {msg:{fr:'Bienvenue dans le verger ! 🍒 Les zombifruits arrivent par le HAUT et descendent vers tes arrosoirs. (touche cette bulle pour continuer)',
+       en:'Welcome to the orchard! 🍒 Zombifruits come from the TOP and march down toward your watering cans. (tap this bubble to continue)'}, tap:true},
+ {msg:{fr:'Commence par l’économie : touche la carte Fraisoleil 🍓 en bas de l’écran.',
+       en:'Economy first: tap the Strawflower card 🍓 at the bottom of the screen.'}, card:'fraisoleil'},
+ {msg:{fr:'Maintenant, plante-le dans la case qui clignote !',
+       en:'Now plant it in the blinking cell!'}, place:['fraisoleil',2,5]},
+ {msg:{fr:'Bravo ! Le Fraisoleil fabrique des gouttes de rosée 💧. Touche une goutte pour la ramasser.',
+       en:'Great! The Strawflower makes dew drops 💧. Tap a drop to collect it.'}, collect:true},
+ {msg:{fr:'Continue à ramasser la rosée jusqu’à 100 💧 : il en faut pour ton tireur.',
+       en:'Keep collecting dew up to 100 💧: you need it for your shooter.'}, dew:100},
+ {msg:{fr:'Touche la carte Cracheur 🍒 : c’est lui qui tire des pépins.',
+       en:'Tap the Seed Spitter card 🍒: he is the one who shoots seeds.'}, card:'cracheur'},
+ {msg:{fr:'Place-le AU-DESSUS du Fraisoleil, dans la case qui clignote : il protège toute sa colonne.',
+       en:'Place him ABOVE the Strawflower, in the blinking cell: he guards the whole column.'}, place:['cracheur',2,3]},
+ {msg:{fr:'Un zombifruit attaque ta colonne ! Regarde ton Cracheur l’arroser de pépins… 🧟',
+       en:'A zombifruit is attacking your column! Watch your Seed Spitter pelt it with seeds… 🧟'}, spawn:['pomme',2], waitClear:true},
+ {msg:{fr:'Dernier secret : si un zombifruit te dépasse, l’arrosoir de la colonne le stoppe — une seule fois ! Regarde à droite.',
+       en:'One last secret: if a zombifruit slips past you, the column’s watering can stops it — once! Watch the right side.'}, spawnLow:['citron',4], waitClear:true},
+ {msg:{fr:'Parfait, tu sais tout ! Défends le Verger Enchanté ! 🍒⭐ (touche pour terminer)',
+       en:'Perfect, you know everything! Defend the Enchanted Orchard! 🍒⭐ (tap to finish)'}, tap:true, end:true},
 ];
 function advanceTuto(){
   tuto.i++;
@@ -247,7 +351,7 @@ function advanceTuto(){
     spawnZombie({type:st.spawnLow[0], lane:st.spawnLow[1]});
     zombies[zombies.length-1].y = gridBot - ch*1.15;
   }
-  $('tutoText').textContent=st.msg;
+  $('tutoText').textContent=tr(st.msg);
   syncCards();
 }
 
@@ -344,8 +448,8 @@ function spawnZombie(q){
   if (q.g!==undefined && q.g>waveI){ waveI=q.g; }
   if (q.g===waveN-1 && !finalShown){
     finalShown=true;
-    banner('🧟 Vague finale !'); sfx.bad(); sfx.groan();
-    voice('Zombie attaque !', 0.6, 'vx_zombie_attaque');
+    banner(STR().finalWave); sfx.bad(); sfx.groan();
+    voice(STR().zombieAttack, 0.6, 'vx_zombie_attaque');
   }
   if (def.boss && state==='playing') startCine(zombies[zombies.length-1]);
 }
@@ -354,11 +458,11 @@ function spawnZombie(q){
 function startCine(z){
   state='cine';                       // la boucle s'arrête, les CSS animent la scène
   try{ if (IMG[z.def.img]) $('cineImg').src=IMG[z.def.img].src; }catch(e){}
-  $('cineName').textContent=z.def.name;
-  $('cineText').textContent=CINE_LINES[z.type] || 'GRRRAAAH !';
+  $('cineName').textContent=tr(z.def.name);
+  $('cineText').textContent=tr(CINE_LINES[z.type]) || 'GRRRAAAH !';
   $('ovCine').hidden=false;
   sfx.groan();
-  voice(z.def.name + ' attaque !', 0.5, 'vx_baron');
+  voice(tr(z.def.name) + STR().attacks, 0.5, 'vx_baron');
   cineTimer=setTimeout(endCine, 4500);
 }
 function endCine(){
@@ -492,7 +596,7 @@ function update(dt){
         sfx.spray();
         for (const zz of zombies) if (zz.lane===z.lane){ zz.hp=-1; killFx(zz); }
         cullZombies();
-        popup(cellX(z.lane), gridBot-20, 'Splash !');
+        popup(cellX(z.lane), gridBot-20, STR().splash);
       } else { loseLevel(); return; }
     }
   }
@@ -553,14 +657,14 @@ function finishWin(){
   save.unlocked=Math.max(save.unlocked, Math.min(i+2, LEVELS.length));
   Storage.save(save);
   $('winStars').innerHTML=[1,2,3].map(n=>`<span class="${n<=st?'on':'off'}">★</span>`).join('');
-  $('winTitle').textContent = LEVELS[i].tuto ? 'Leçon terminée !' :
-                              i===LEVELS.length-1 ? 'Le Baron est compoté !' :
-                              LEVELS[i].boss ? 'Boss vaincu !' : 'Verger défendu !';
+  $('winTitle').textContent = LEVELS[i].tuto ? STR().winTuto :
+                              i===LEVELS.length-1 ? STR().winFinal :
+                              LEVELS[i].boss ? STR().winBoss : STR().winDefault;
   $('winScore').textContent=score;
-  $('winBest').textContent='Record : '+save.best[i];
+  $('winBest').textContent=STR().best+' '+save.best[i];
   $('btnNext').hidden = i+1>=LEVELS.length;
   sfx.win();
-  play('vx_victoire', .9);   // clip seulement : pas de voix robotique de repli à chaque victoire
+  play(LANG==='en' ? 'vx_victoire_en' : 'vx_victoire', .9);   // clip seulement : pas de voix robotique de repli à chaque victoire
   setTimeout(()=>{ if(state==='won') ovWin.hidden=false; }, 600);
 }
 function loseLevel(){
@@ -727,7 +831,7 @@ function syncHud(){
   $('btnMute').textContent = save.muted ? '🔇' : '🔊';
   const pct = totalSpawn ? Math.round(spawnedN/totalSpawn*100) : 0;
   $('waveFill').style.width=pct+'%';
-  $('waveTxt').textContent = (levelIndex+1)+'. '+LEVELS[levelIndex].name;
+  $('waveTxt').textContent = (levelIndex+1)+'. '+tr(LEVELS[levelIndex].name);
   syncCards();
 }
 function buildCards(){
@@ -737,9 +841,9 @@ function buildCards(){
     const P=PLANTS[id];
     const b=document.createElement('button');
     b.className='pcard'; b.dataset.id=id;
-    b.title=P.name+' — '+P.desc;
+    b.title=tr(P.name)+' — '+tr(P.desc);
     const im=document.createElement('img');
-    im.alt=P.name; if (IMG[P.img]) im.src=IMG[P.img].src;
+    im.alt=tr(P.name); if (IMG[P.img]) im.src=IMG[P.img].src;
     const cost=document.createElement('span'); cost.className='pcost'; cost.textContent='💧'+P.cost;
     const cd=document.createElement('div'); cd.className='cd';
     b.append(im,cost,cd);
@@ -757,7 +861,7 @@ function buildCards(){
     bar.appendChild(b);
   }
   const pb=document.createElement('button');
-  pb.className='pcard'; pb.id='cardPelle'; pb.title='Pelle : retirer une plante';
+  pb.className='pcard'; pb.id='cardPelle'; pb.title=STR().pelleTitle;
   const pim=document.createElement('img'); pim.alt='Pelle'; if (IMG.pelle) pim.src=IMG.pelle.src;
   pb.appendChild(pim);
   pb.addEventListener('click',()=>{
@@ -827,6 +931,25 @@ for (const id of ['btnMenu','btnMenu1','btnMenu2','btnMenu3']) $(id).addEventLis
 for (const id of ['btnRestart1','btnRestart2','btnRestart3']) $(id).addEventListener('click', ()=>startLevel(levelIndex));
 $('btnNext').addEventListener('click', ()=>{ toMenu(); openLevel(levelIndex+1); });
 
+/* ---------- Langue : applique le dictionnaire à l'interface ---------- */
+function applyLang(){
+  const S=STR();
+  document.documentElement.lang=LANG;
+  document.title=S.htmlTitle;
+  $('menuTitle').innerHTML=S.menuTitle;
+  $('homeTitle').innerHTML=S.homeTitle;
+  document.querySelectorAll('[data-t]').forEach(e=>{ e.innerHTML=S[e.dataset.t]; });
+  $('helpRows').innerHTML=S.helpRows.map(([ic,txt])=>`<div class="helprow"><span>${ic}</span><p>${txt}</p></div>`).join('');
+  $('btnLang').textContent=S.langBtn;
+}
+function setLang(l){
+  LANG = l==='en' ? 'en' : 'fr';
+  save.lang=LANG; Storage.save(save);
+  applyLang();
+  if (!$('menu').hidden) showMenu();
+  if (!homeEl.hidden) renderHome();
+}
+
 /* ---------- Menu principal (écran titre) ---------- */
 function showMenu(){
   state='home';
@@ -834,8 +957,8 @@ function showMenu(){
   const set=(id,key)=>{ const el=$(id); if (IMG[key]){ el.src=IMG[key].src; el.hidden=false; } };
   set('mcPlant','plant_cracheur'); set('mcZombi','z_pomme'); set('menuLogo','logo');
   const tot=Object.values(save.stars).reduce((a,b)=>a+b,0);
-  $('menuStars').innerHTML = tot ? `<span class="on">★</span> ${tot} / ${LEVELS.length*3} étoiles` : 'Défends le Verger Enchanté !';
-  $('btnMuteMenu').textContent = save.muted ? '🔇 Son coupé' : '🔊 Son';
+  $('menuStars').innerHTML = tot ? STR().stars(tot, LEVELS.length*3) : STR().menuPitch;
+  $('btnMuteMenu').textContent = save.muted ? STR().soundOff : STR().soundOn;
   $('menu').hidden=false;
 }
 $('btnStart').addEventListener('click', ()=>{
@@ -845,9 +968,10 @@ $('btnStart').addEventListener('click', ()=>{
 });
 $('btnMuteMenu').addEventListener('click', ()=>{
   save.muted=!save.muted; Storage.save(save);
-  $('btnMuteMenu').textContent = save.muted ? '🔇 Son coupé' : '🔊 Son';
+  $('btnMuteMenu').textContent = save.muted ? STR().soundOff : STR().soundOn;
   if (!save.muted) sfx.dew();
 });
+$('btnLang').addEventListener('click', ()=>{ setLang(LANG==='fr' ? 'en' : 'fr'); });
 
 /* ---------- Accueil : liste des niveaux ---------- */
 function starsHtml(n){ return [1,2,3].map(k=>`<span class="${k<=n?'on':'off'}">★</span>`).join(''); }
@@ -862,7 +986,7 @@ function renderHome(){
     const key = locked ? 'panneau' : L.boss ? 'z_baron' : (['plant_cracheur','z_pomme','z_orange','plant_givree','z_pasteque','z_raisin','fx_spore'][i%7]);
     if (IMG[key]) im.src=IMG[key].src; im.alt='';
     const body=document.createElement('span'); body.className='lbody';
-    body.innerHTML=`<span class="lname">${locked?'🔒 ':''}${i+1}. ${L.name}</span>
+    body.innerHTML=`<span class="lname">${locked?'🔒 ':''}${i+1}. ${tr(L.name)}</span>
                     <span class="lstars">${locked?'':starsHtml(st)}</span>`;
     b.append(im,body);
     if (locked) b.disabled=true;
@@ -870,17 +994,16 @@ function renderHome(){
     list.appendChild(b);
   });
   const done=Object.keys(save.stars).length;
-  $('heroTag').textContent = done ? `🍒 ${done}/${LEVELS.length} niveaux défendus — continue !`
-    : 'Le Baron Zombifié attaque le Verger : plante tes fruits et défends chaque rangée !';
+  $('heroTag').textContent = done ? STR().heroTagN(done, LEVELS.length) : STR().heroTag0;
 }
 function openLevel(i){
   if (i>=LEVELS.length) return;
   levelIndex=i;
   const L=LEVELS[i];
-  $('plName').textContent=(L.boss?'👑 ':'')+(i+1)+'. '+L.name;
-  $('plStory').textContent=L.story;
+  $('plName').textContent=(L.boss?'👑 ':'')+(i+1)+'. '+tr(L.name);
+  $('plStory').textContent=tr(L.story);
   $('plStars').innerHTML=starsHtml(save.stars[i]||0);
-  $('plBest').innerHTML=save.best[i]?('Record : <b>'+save.best[i]+'</b>'):'Jamais défendu';
+  $('plBest').innerHTML=save.best[i]?(STR().best+' <b>'+save.best[i]+'</b>'):STR().never;
   ovLevel.hidden=false;
 }
 $('btnPlClose').addEventListener('click', ()=>{ ovLevel.hidden=true; });
@@ -906,9 +1029,9 @@ $('btnHelpClose').addEventListener('click', ()=>{ $('ovHelp').hidden=true; });
 function showUnlock(id, then){
   const P=PLANTS[id], U=UNLOCKS[id];
   if (IMG[P.img]) $('unImg').src=IMG[P.img].src;
-  $('unName').textContent=P.name+' · 💧'+P.cost;
-  $('unDesc').textContent=U.desc;
-  $('unHow').textContent='💡 '+U.how;
+  $('unName').textContent=tr(P.name)+' · 💧'+P.cost;
+  $('unDesc').textContent=tr(U.desc);
+  $('unHow').textContent='💡 '+tr(U.how);
   unlockThen=()=>{ save.seenU[id]=1; Storage.save(save); then(); };
   $('ovUnlock').hidden=false;
 }
@@ -940,7 +1063,8 @@ function runIntro(done){
 }
 
 /* ---------- Démarrage ---------- */
-function boot(){ showMenu(); }
+function boot(){ applyLang(); showMenu(); }
+applyLang();   // dès le chargement : l'intro et les écrans statiques sont dans la bonne langue
 loadImages(()=>{
   if (window.claude?.hot?.data !== undefined && window.claude?.hot?.data !== null){
     $('intro').hidden=true; boot();   // rechargement à chaud : pas d'intro
