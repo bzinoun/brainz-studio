@@ -99,7 +99,35 @@ const Storage = {
 };
 let save = Object.assign({unlocked:1, best:{}, stars:{}, muted:false, seenU:{}}, Storage.load());
 
-/* ---------- Audio (synthèse WebAudio) ---------- */
+/* ---------- Audio embarqué (ElevenLabs, générés par tools/gen-audio.py) ----------
+   Chaque son garde un repli : synthèse WebAudio pour les bruitages,
+   speechSynthesis pour les voix. Rien n'est requis, aucun réseau en jeu. */
+const SND = {};
+const SND_NAMES = ['sfx_groan','sfx_splat','sfx_boom','sfx_spray','sfx_pop','sfx_munch',
+                   'vx_zombie_attaque','vx_baron','vx_victoire'];
+const sndActive = new Set();
+(function loadSounds(){
+  for (const n of SND_NAMES){
+    const a = new Audio();
+    a.addEventListener('canplaythrough', ()=>{ SND[n]=a; }, {once:true});
+    a.onerror = ()=>{};
+    a.preload='auto';
+    a.src = 'src/assets/audio/'+n+'.mp3';
+  }
+})();
+function play(name, vol){
+  if (save.muted || !SND[name]) return false;
+  try{
+    const a = SND[name].cloneNode();
+    a.volume = vol===undefined ? 1 : vol;
+    sndActive.add(a);
+    a.onended = ()=>sndActive.delete(a);
+    a.play().catch(()=>{});
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ---------- Audio (synthèse WebAudio, repli) ---------- */
 let actx = null;
 function tone(freq, dur, type, vol, when){
   if (save.muted) return;
@@ -115,22 +143,24 @@ function tone(freq, dur, type, vol, when){
   }catch(e){}
 }
 const sfx = {
-  plant(){ tone(300,.08,'triangle',.09); tone(420,.09,'triangle',.08,.05); },
+  plant(){ if (play('sfx_pop',.9)) return; tone(300,.08,'triangle',.09); tone(420,.09,'triangle',.08,.05); },
   shoot(){ tone(520,.05,'square',.04); },
   hit(){ tone(240,.06,'sine',.07); },
-  splat(n){ for(let i=0;i<Math.min(n||1,4);i++) tone(170+i*60,.14,'sine',.1,i*0.05); },
+  splat(n){ if (play('sfx_splat', Math.min(1,.55+(n||1)*.12))) return;
+            for(let i=0;i<Math.min(n||1,4);i++) tone(170+i*60,.14,'sine',.1,i*0.05); },
   dew(){ tone(760,.08,'sine',.08); tone(1020,.1,'sine',.07,.06); },
-  boom(){ tone(90,.3,'sawtooth',.12); tone(60,.4,'sine',.1,.05); },
-  spray(){ [880,1100,990].forEach((f,i)=>tone(f,.09,'sine',.06,i*.05)); },
-  eat(){ tone(140,.12,'sawtooth',.05); },
+  boom(){ if (play('sfx_boom')) return; tone(90,.3,'sawtooth',.12); tone(60,.4,'sine',.1,.05); },
+  spray(){ if (play('sfx_spray')) return; [880,1100,990].forEach((f,i)=>tone(f,.09,'sine',.06,i*.05)); },
+  eat(){ if (play('sfx_munch',.5)) return; tone(140,.12,'sawtooth',.05); },
   bad(){ tone(220,.14,'sawtooth',.07); tone(180,.18,'sawtooth',.06,.07); },
   win(){ [523,659,784,1047].forEach((f,i)=>tone(f,.22,'triangle',.11,i*0.12)); },
   lose(){ [330,262,196,147].forEach((f,i)=>tone(f,.25,'sawtooth',.07,i*0.13)); },
-  groan(){ tone(72,.5,'sawtooth',.12); tone(56,.7,'sawtooth',.1,.2); tone(90,.45,'sawtooth',.08,.5); },
+  groan(){ if (play('sfx_groan')) return; tone(72,.5,'sawtooth',.12); tone(56,.7,'sawtooth',.1,.2); tone(90,.45,'sawtooth',.08,.5); },
 };
-/* Voix de synthèse (API locale du navigateur : aucun fichier, aucun réseau) */
-function voice(text, pitch){
+/* Voix : clip ElevenLabs embarqué si présent, sinon speechSynthesis locale */
+function voice(text, pitch, clip){
   if (save.muted) return;
+  if (clip && play(clip)) return;
   try{
     const u = new SpeechSynthesisUtterance(text);
     u.lang='fr-FR'; u.rate=0.95; u.pitch=pitch===undefined?1:pitch;
@@ -315,7 +345,7 @@ function spawnZombie(q){
   if (q.g===waveN-1 && !finalShown){
     finalShown=true;
     banner('🧟 Vague finale !'); sfx.bad(); sfx.groan();
-    voice('Zombie attaque !', 0.6);
+    voice('Zombie attaque !', 0.6, 'vx_zombie_attaque');
   }
   if (def.boss && state==='playing') startCine(zombies[zombies.length-1]);
 }
@@ -328,7 +358,7 @@ function startCine(z){
   $('cineText').textContent=CINE_LINES[z.type] || 'GRRRAAAH !';
   $('ovCine').hidden=false;
   sfx.groan();
-  voice(z.def.name + ' attaque !', 0.5);
+  voice(z.def.name + ' attaque !', 0.5, 'vx_baron');
   cineTimer=setTimeout(endCine, 4500);
 }
 function endCine(){
@@ -530,6 +560,7 @@ function finishWin(){
   $('winBest').textContent='Record : '+save.best[i];
   $('btnNext').hidden = i+1>=LEVELS.length;
   sfx.win();
+  play('vx_victoire', .9);   // clip seulement : pas de voix robotique de repli à chaque victoire
   setTimeout(()=>{ if(state==='won') ovWin.hidden=false; }, 600);
 }
 function loseLevel(){
@@ -546,6 +577,8 @@ function pauseGame(){
   state='paused';
   cancelAnimationFrame(rafId); rafId=0;
   try{ speechSynthesis.cancel(); }catch(e){}
+  for (const a of sndActive){ try{ a.pause(); }catch(e){} }
+  sndActive.clear();
   ovPause.hidden=false;
 }
 function resumeGame(){
